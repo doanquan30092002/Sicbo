@@ -3,12 +3,15 @@ from sqlalchemy.orm import DeclarativeBase
 
 from app.config import settings
 
+_is_supabase_pooler = "pooler.supabase.com" in settings.database_url
+
 engine = create_async_engine(
     settings.database_url,
     echo=settings.debug,
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
+    connect_args={"statement_cache_size": 0, "prepared_statement_cache_size": 0} if _is_supabase_pooler else {},
 )
 
 AsyncSessionLocal = async_sessionmaker(
