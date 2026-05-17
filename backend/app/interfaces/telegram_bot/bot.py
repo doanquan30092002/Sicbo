@@ -72,6 +72,7 @@ async def start_bot(application: Application) -> None:
             url=webhook_url,
             secret_token=settings.telegram_webhook_secret or None,
             drop_pending_updates=True,
+            allowed_updates=["message", "callback_query", "edited_message"],
         )
         logger.info(f"✅ Telegram bot chạy webhook mode: {webhook_url}")
     else:
