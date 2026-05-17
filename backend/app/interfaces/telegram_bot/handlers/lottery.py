@@ -32,9 +32,19 @@ async def result_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     data = result.parsed_data or {}
-    special = data.get("special", "—")
-    de = data.get("de_number", special[-2:] if special and len(special) >= 2 else "—")
-    all_last2 = data.get("all_last2", [])
+    special = data.get("special_prize") or data.get("special") or "—"
+    de = (
+        data.get("special_last2")
+        or data.get("de_number")
+        or (special[-2:] if special and len(special) >= 2 and special != "—" else "—")
+    )
+    all_last2 = data.get("all_last2", []) or []
+
+    if not all_last2 and (special == "—" or not special):
+        await update.message.reply_text(
+            f"⏳ Kết quả XSMB ngày {today.strftime('%d/%m/%Y')} chưa có (sẽ cập nhật sau 18:30).",
+        )
+        return
 
     # Group last2 by first digit (đầu lô)
     dau_lo: dict[str, list[str]] = {str(i): [] for i in range(10)}
