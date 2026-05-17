@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, Wallet, User, Dice5, History, Trophy } from "lucide-react";
+import { LogOut, Wallet, User, Dice5, History, Trophy, Shield } from "lucide-react";
 
 import { useAuth } from "@/lib/store";
 import { formatVND, cn } from "@/lib/utils";
@@ -54,6 +54,20 @@ export function Navbar() {
               </Link>
             );
           })}
+          {user?.is_admin && (
+            <Link
+              href="/admin"
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition",
+                pathname.startsWith("/admin")
+                  ? "bg-red-900/40 text-red-200"
+                  : "text-red-400 hover:bg-red-900/30 hover:text-red-200",
+              )}
+            >
+              <Shield className="h-4 w-4" />
+              Admin
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-3">

@@ -142,3 +142,47 @@ export interface TelegramLinkToken {
   token: string;
   expires_at: string;
 }
+
+// ---------- Admin ----------
+
+export interface AdminStats {
+  total_users: number;
+  total_pending_withdrawals: number;
+  today_bets: number;
+  today_total_stake: string;
+  today_total_payout: string;
+}
+
+export interface Deposit {
+  id: number;
+  user_id: number;
+  amount: string;
+  payment_method: string;
+  transfer_content: string;
+  status: string;
+  bank_account?: string | null;
+  sepay_transaction_id?: string | null;
+  confirmed_at?: string | null;
+  created_at: string;
+}
+
+export interface DepositList {
+  items: Deposit[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface WithdrawalList {
+  items: Withdrawal[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface UserList {
+  items: User[];
+  total: number;
+  page: number;
+  limit: number;
+}

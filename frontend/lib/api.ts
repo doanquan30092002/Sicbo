@@ -3,19 +3,25 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
 import {
+  AdminStats,
   Bet,
   BetList,
   CutoffStatus,
+  Deposit,
   DepositInit,
+  DepositList,
   Game,
   GameResult,
   LoginResponse,
   PlaceBetPayload,
   TelegramLinkToken,
   TokenPair,
+  Transaction,
   TransactionList,
   User,
+  UserList,
   Withdrawal,
+  WithdrawalList,
 } from "./types";
 
 const ACCESS_KEY = "sicbo_access_token";
@@ -235,5 +241,67 @@ export async function apiResultRecent(gameId: string, limit = 7): Promise<{ item
   const res = await api.get<{ items: GameResult[] }>(`/api/results/${gameId}`, {
     params: { limit },
   });
+  return res.data;
+}
+
+// ---------- Admin ----------
+
+export async function apiAdminStats(): Promise<AdminStats> {
+  const res = await api.get<AdminStats>("/api/admin/stats");
+  return res.data;
+}
+
+export async function apiAdminListPendingDeposits(page = 1, limit = 20): Promise<DepositList> {
+  const res = await api.get<DepositList>("/api/admin/deposits/pending", {
+    params: { page, limit },
+  });
+  return res.data;
+}
+
+export async function apiAdminConfirmDeposit(
+  depositId: number,
+  payload: { override_amount?: string; note?: string } = {},
+): Promise<Deposit> {
+  const res = await api.post<Deposit>(`/api/admin/deposits/${depositId}/confirm`, payload);
+  return res.data;
+}
+
+export async function apiAdminCreditDirect(payload: {
+  user_id: number;
+  amount: string | number;
+  note?: string;
+}): Promise<Transaction> {
+  const res = await api.post<Transaction>("/api/admin/deposits/credit", payload);
+  return res.data;
+}
+
+export async function apiAdminListPendingWithdrawals(page = 1, limit = 20): Promise<WithdrawalList> {
+  const res = await api.get<WithdrawalList>("/api/admin/withdrawals/pending", {
+    params: { page, limit },
+  });
+  return res.data;
+}
+
+export async function apiAdminApproveWithdrawal(withdrawalId: number): Promise<Withdrawal> {
+  const res = await api.post<Withdrawal>(`/api/admin/withdrawals/${withdrawalId}/approve`);
+  return res.data;
+}
+
+export async function apiAdminRejectWithdrawal(
+  withdrawalId: number,
+  reason?: string,
+): Promise<Withdrawal> {
+  const res = await api.post<Withdrawal>(`/api/admin/withdrawals/${withdrawalId}/reject`, {
+    reason,
+  });
+  return res.data;
+}
+
+export async function apiAdminListUsers(params: {
+  search?: string;
+  page?: number;
+  limit?: number;
+} = {}): Promise<UserList> {
+  const res = await api.get<UserList>("/api/admin/users", { params });
   return res.data;
 }
