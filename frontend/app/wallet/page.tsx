@@ -10,6 +10,14 @@ import { Protected } from "@/components/Protected";
 import { useAuth } from "@/lib/store";
 import { formatDateTime, formatVND } from "@/lib/utils";
 
+const TX_TYPE_LABELS: Record<string, string> = {
+  deposit: "Nạp tiền",
+  withdraw: "Rút tiền",
+  bet_debit: "Đặt cược",
+  win_credit: "Thắng cược",
+  refund: "Hoàn tiền",
+};
+
 export default function WalletPage() {
   return (
     <Protected>
@@ -102,24 +110,28 @@ function WalletInner() {
                   </td>
                 </tr>
               ) : (
-                txs.map((t) => (
-                  <tr key={t.id} className="border-t border-zinc-900">
-                    <td className="px-3 py-2 text-zinc-300">{formatDateTime(t.created_at)}</td>
-                    <td className="px-3 py-2 text-zinc-300">{t.type}</td>
-                    <td
-                      className={`px-3 py-2 text-right font-mono ${
-                        Number(t.amount) >= 0 ? "text-emerald-400" : "text-red-400"
-                      }`}
-                    >
-                      {Number(t.amount) >= 0 ? "+" : ""}
-                      {formatVND(t.amount)}
-                    </td>
-                    <td className="px-3 py-2 text-right font-mono text-zinc-200">
-                      {formatVND(t.balance_after)}
-                    </td>
-                    <td className="px-3 py-2 text-xs text-zinc-500">{t.description || "—"}</td>
-                  </tr>
-                ))
+                txs.map((t) => {
+                  const isDebit = t.type === "bet_debit" || t.type === "withdraw";
+                  const label = TX_TYPE_LABELS[t.type] ?? t.type;
+                  return (
+                    <tr key={t.id} className="border-t border-zinc-900">
+                      <td className="px-3 py-2 text-zinc-300">{formatDateTime(t.created_at)}</td>
+                      <td className="px-3 py-2 text-zinc-300">{label}</td>
+                      <td
+                        className={`px-3 py-2 text-right font-mono ${
+                          isDebit ? "text-red-400" : "text-emerald-400"
+                        }`}
+                      >
+                        {isDebit ? "−" : "+"}
+                        {formatVND(t.amount)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-zinc-200">
+                        {formatVND(t.balance_after)}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-zinc-500">{t.description || "—"}</td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
