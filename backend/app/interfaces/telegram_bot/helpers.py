@@ -39,9 +39,16 @@ def auth_required(handler: Callable[..., Awaitable]):
     @wraps(handler)
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
         tg_user = update.effective_user
+        print(f"[auth_required] handler={handler.__name__} tg_id={tg_user.id if tg_user else None}", flush=True)
         if not tg_user:
             return
-        user = await get_user_by_telegram_id(tg_user.id)
+        try:
+            user = await get_user_by_telegram_id(tg_user.id)
+        except Exception as e:
+            print(f"[auth_required] get_user_by_telegram_id EXCEPTION: {type(e).__name__}: {e}", flush=True)
+            import traceback; traceback.print_exc()
+            raise
+        print(f"[auth_required] found user: {user.username if user else None}", flush=True)
         if not user:
             await update.effective_message.reply_text(
                 "⚠️ Bạn chưa liên kết tài khoản.\n"
@@ -54,7 +61,14 @@ def auth_required(handler: Callable[..., Awaitable]):
             await update.effective_message.reply_text("🚫 Tài khoản đã bị khoá.")
             return
         context.user_data["sicbo_user_id"] = user.id
-        return await handler(update, context, user, *args, **kwargs)
+        try:
+            result = await handler(update, context, user, *args, **kwargs)
+            print(f"[auth_required] handler {handler.__name__} OK", flush=True)
+            return result
+        except Exception as e:
+            print(f"[auth_required] handler {handler.__name__} EXCEPTION: {type(e).__name__}: {e}", flush=True)
+            import traceback; traceback.print_exc()
+            raise
 
     return wrapper
 
