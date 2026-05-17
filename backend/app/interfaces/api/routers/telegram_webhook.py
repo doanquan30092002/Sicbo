@@ -42,5 +42,13 @@ async def telegram_webhook(
     if update is None:
         logger.warning("Telegram webhook: Update.de_json returned None.")
         return {"ok": True}
-    await bot_app.process_update(update)
+
+    msg = update.message.text if update.message else None
+    cb = update.callback_query.data if update.callback_query else None
+    logger.info(f"TG IN: update_id={update.update_id} msg={msg!r} cb={cb!r}")
+
+    try:
+        await bot_app.process_update(update)
+    except Exception as e:
+        logger.exception(f"process_update FAILED: {e}")
     return {"ok": True}
