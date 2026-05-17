@@ -48,6 +48,11 @@ class IWalletRepository(ABC):
     async def confirm_deposit(self, deposit_id: int, sepay_transaction_id: str) -> Deposit: ...
 
     @abstractmethod
+    async def get_pending_deposits(
+        self, page: int = 1, limit: int = 20
+    ) -> tuple[list[Deposit], int]: ...
+
+    @abstractmethod
     async def create_withdrawal(
         self,
         user_id: int,

@@ -4,6 +4,7 @@ from typing import AsyncGenerator, Optional
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.use_cases.admin.credit_user_balance import CreditUserBalance
 from app.application.use_cases.admin.process_withdrawal import ProcessWithdrawal
 from app.application.use_cases.auth.login_user import LoginUser
 from app.application.use_cases.auth.register_user import RegisterUser
@@ -178,6 +179,14 @@ def get_process_withdrawal_uc(
     notifier: TelegramNotifier = Depends(get_telegram_notifier),
 ) -> ProcessWithdrawal:
     return ProcessWithdrawal(wallet_repo, user_repo, notifier)
+
+
+def get_credit_user_balance_uc(
+    wallet_repo: WalletRepository = Depends(get_wallet_repo),
+    user_repo: UserRepository = Depends(get_user_repo),
+    notifier: TelegramNotifier = Depends(get_telegram_notifier),
+) -> CreditUserBalance:
+    return CreditUserBalance(wallet_repo, user_repo, notifier)
 
 
 def get_generate_link_token_uc(

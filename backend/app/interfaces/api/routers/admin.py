@@ -6,6 +6,12 @@ import pytz
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 
+from app.application.use_cases.admin.credit_user_balance import (
+    CreditUserBalance,
+    DepositAlreadyProcessedError,
+    DepositNotFoundError,
+    UserNotFoundError,
+)
 from app.application.use_cases.admin.process_withdrawal import ProcessWithdrawal
 from app.domain.entities.user import User
 from app.infrastructure.database.models.bet_model import BetModel
@@ -13,6 +19,7 @@ from app.infrastructure.database.models.user_model import UserModel
 from app.infrastructure.database.repositories.user_repository import UserRepository
 from app.infrastructure.database.repositories.wallet_repository import WalletRepository
 from app.interfaces.api.dependencies import (
+    get_credit_user_balance_uc,
     get_current_admin,
     get_process_withdrawal_uc,
     get_session,
@@ -21,8 +28,13 @@ from app.interfaces.api.dependencies import (
 )
 from app.interfaces.api.schemas.auth import UserResponse
 from app.interfaces.api.schemas.wallet import (
+    AdminConfirmDepositRequest,
+    AdminCreditDirectRequest,
     AdminStatsResponse,
     AdminWithdrawalActionRequest,
+    DepositListResponse,
+    DepositResponse,
+    TransactionResponse,
     WithdrawalListResponse,
     WithdrawalResponse,
 )
@@ -77,6 +89,65 @@ async def reject_withdrawal(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     return WithdrawalResponse.model_validate(w, from_attributes=True)
+
+
+# ---------- Deposits (manual confirm) ----------
+
+@router.get("/deposits/pending", response_model=DepositListResponse)
+async def list_pending_deposits(
+    _admin: User = Depends(get_current_admin),
+    wallet_repo: WalletRepository = Depends(get_wallet_repo),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100),
+):
+    items, total = await wallet_repo.get_pending_deposits(page=page, limit=limit)
+    return DepositListResponse(
+        items=[DepositResponse.model_validate(d, from_attributes=True) for d in items],
+        total=total,
+        page=page,
+        limit=limit,
+    )
+
+
+@router.post("/deposits/{deposit_id}/confirm", response_model=DepositResponse)
+async def confirm_deposit_manual(
+    deposit_id: int,
+    body: AdminConfirmDepositRequest,
+    admin: User = Depends(get_current_admin),
+    uc: CreditUserBalance = Depends(get_credit_user_balance_uc),
+):
+    try:
+        deposit = await uc.confirm_pending_deposit(
+            deposit_id=deposit_id,
+            admin_id=admin.id,
+            override_amount=body.override_amount,
+            note=body.note,
+        )
+    except DepositNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except DepositAlreadyProcessedError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    return DepositResponse.model_validate(deposit, from_attributes=True)
+
+
+@router.post("/deposits/credit", response_model=TransactionResponse)
+async def credit_user_direct(
+    body: AdminCreditDirectRequest,
+    admin: User = Depends(get_current_admin),
+    uc: CreditUserBalance = Depends(get_credit_user_balance_uc),
+):
+    try:
+        tx = await uc.credit_direct(
+            user_id=body.user_id,
+            amount=body.amount,
+            admin_id=admin.id,
+            note=body.note,
+        )
+    except UserNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    return TransactionResponse.model_validate(tx, from_attributes=True)
 
 
 # ---------- Users ----------

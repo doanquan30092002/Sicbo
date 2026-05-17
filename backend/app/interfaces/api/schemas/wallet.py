@@ -116,6 +116,24 @@ class AdminWithdrawalActionRequest(BaseModel):
     reason: Optional[str] = Field(default=None, max_length=500)
 
 
+class DepositListResponse(BaseModel):
+    items: list[DepositResponse]
+    total: int
+    page: int
+    limit: int
+
+
+class AdminConfirmDepositRequest(BaseModel):
+    override_amount: Optional[Decimal] = Field(default=None, gt=0, description="Số tiền thực tế nhận (mặc định = deposit.amount)")
+    note: Optional[str] = Field(default=None, max_length=500)
+
+
+class AdminCreditDirectRequest(BaseModel):
+    user_id: int = Field(gt=0)
+    amount: Decimal = Field(gt=0)
+    note: Optional[str] = Field(default=None, max_length=500)
+
+
 class AdminStatsResponse(BaseModel):
     total_users: int
     total_pending_withdrawals: int

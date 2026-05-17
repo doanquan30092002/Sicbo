@@ -156,6 +156,23 @@ class WalletRepository(IWalletRepository):
         await self._session.flush()
         return _to_deposit(m)
 
+    async def get_pending_deposits(
+        self, page: int = 1, limit: int = 20
+    ) -> tuple[list[Deposit], int]:
+        count_stmt = select(func.count(DepositModel.id)).where(
+            DepositModel.status == DepositStatus.PENDING.value
+        )
+        total = (await self._session.execute(count_stmt)).scalar_one()
+        stmt = (
+            select(DepositModel)
+            .where(DepositModel.status == DepositStatus.PENDING.value)
+            .order_by(DepositModel.created_at.desc())
+            .offset((page - 1) * limit)
+            .limit(limit)
+        )
+        rows = (await self._session.execute(stmt)).scalars().all()
+        return [_to_deposit(m) for m in rows], total
+
     async def create_withdrawal(
         self,
         user_id: int,
