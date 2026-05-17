@@ -67,12 +67,16 @@ class UserRepository(IUserRepository):
     async def link_telegram(
         self, user_id: int, telegram_id: int, telegram_username: Optional[str]
     ) -> User:
-        m = await self._session.get(UserModel, user_id)
+        stmt = (
+            update(UserModel)
+            .where(UserModel.id == user_id)
+            .values(telegram_id=telegram_id, telegram_username=telegram_username)
+            .returning(UserModel)
+        )
+        result = await self._session.execute(stmt)
+        m = result.scalar_one_or_none()
         if m is None:
             raise ValueError(f"User #{user_id} không tồn tại.")
-        m.telegram_id = telegram_id
-        m.telegram_username = telegram_username
-        await self._session.flush()
         return _to_entity(m)
 
     async def get_balance_for_update(self, user_id: int) -> Decimal:
