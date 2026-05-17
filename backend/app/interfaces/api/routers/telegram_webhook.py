@@ -39,5 +39,8 @@ async def telegram_webhook(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid JSON")
 
     update = Update.de_json(data, bot_app.bot)
-    await bot_app.update_queue.put(update)
+    if update is None:
+        logger.warning("Telegram webhook: Update.de_json returned None.")
+        return {"ok": True}
+    await bot_app.process_update(update)
     return {"ok": True}
