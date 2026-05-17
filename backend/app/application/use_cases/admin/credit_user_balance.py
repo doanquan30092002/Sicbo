@@ -61,7 +61,7 @@ class CreditUserBalance:
         new_balance = balance + credit_amount
 
         await self._user_repo.update_balance(deposit.user_id, new_balance)
-        ref = f"admin_manual_{admin_id}"
+        ref = f"admin_manual_{admin_id}_d{deposit.id}"
         confirmed = await self._wallet_repo.confirm_deposit(deposit.id, ref)
         await self._wallet_repo.create_transaction(
             user_id=deposit.user_id,
