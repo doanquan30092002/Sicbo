@@ -2,7 +2,7 @@
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.user import User
@@ -87,11 +87,16 @@ class UserRepository(IUserRepository):
         return balance
 
     async def update_balance(self, user_id: int, new_balance: Decimal) -> User:
-        m = await self._session.get(UserModel, user_id)
+        stmt = (
+            update(UserModel)
+            .where(UserModel.id == user_id)
+            .values(balance=new_balance)
+            .returning(UserModel)
+        )
+        result = await self._session.execute(stmt)
+        m = result.scalar_one_or_none()
         if m is None:
             raise ValueError(f"User #{user_id} không tồn tại.")
-        m.balance = new_balance
-        await self._session.flush()
         return _to_entity(m)
 
     async def list_users(
