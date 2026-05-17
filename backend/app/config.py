@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
     telegram_admin_ids: str = ""  # comma-separated
     telegram_admin_chat_id: str = ""
+    # Webhook mode (production). Để trống = dùng long polling (local dev).
+    telegram_webhook_url: str = ""  # vd https://sicbo-production.up.railway.app
+    telegram_webhook_secret: str = ""  # random string, dùng cho X-Telegram-Bot-Api-Secret-Token header
 
     # SePay
     sepay_webhook_secret: str = ""

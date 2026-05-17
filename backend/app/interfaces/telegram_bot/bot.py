@@ -61,12 +61,28 @@ def build_application() -> Optional[Application]:
 
 
 async def start_bot(application: Application) -> None:
-    """Khởi động bot dưới dạng polling task. Gọi trong FastAPI lifespan."""
+    """Khởi động bot. Webhook mode nếu TELEGRAM_WEBHOOK_URL được set, else long polling."""
     await application.initialize()
     await application.start()
-    if application.updater:
-        await application.updater.start_polling(drop_pending_updates=True)
-    logger.info("✅ Telegram bot đang chạy (polling).")
+
+    webhook_base = settings.telegram_webhook_url.rstrip("/") if settings.telegram_webhook_url else ""
+    if webhook_base:
+        webhook_url = f"{webhook_base}/api/telegram/webhook"
+        await application.bot.set_webhook(
+            url=webhook_url,
+            secret_token=settings.telegram_webhook_secret or None,
+            drop_pending_updates=True,
+        )
+        logger.info(f"✅ Telegram bot chạy webhook mode: {webhook_url}")
+    else:
+        # Đảm bảo không còn webhook cũ trước khi polling
+        try:
+            await application.bot.delete_webhook(drop_pending_updates=True)
+        except Exception as e:
+            logger.warning(f"delete_webhook fail (bỏ qua): {e}")
+        if application.updater:
+            await application.updater.start_polling(drop_pending_updates=True)
+        logger.info("✅ Telegram bot chạy polling mode (local dev).")
 
 
 async def stop_bot(application: Application) -> None:

@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # Import games để register vào GameRegistry
 import app.domain.games  # noqa: F401
 from app.config import settings
-from app.interfaces.api.routers import admin, auth, bets, games, lottery, wallet, webhooks
+from app.interfaces.api.routers import admin, auth, bets, games, lottery, telegram_webhook, wallet, webhooks
 from app.interfaces.scheduler.jobs import build_scheduler
 from app.interfaces.telegram_bot.bot import build_application, start_bot, stop_bot
 
@@ -76,3 +76,4 @@ app.include_router(lottery.router)
 app.include_router(wallet.router)
 app.include_router(webhooks.router)
 app.include_router(admin.router)
+app.include_router(telegram_webhook.router)
